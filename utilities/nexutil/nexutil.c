@@ -36,7 +36,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <argp-extern.h>
+#include <argp.h>
 #include <string.h>
 #include <byteswap.h>
 
@@ -349,6 +349,12 @@ main(int argc, char **argv)
 #else
         nexio = nex_init_ioctl(ifname);
 #endif
+
+    void *buf2 = malloc(34);
+    memset(buf2, 0, 34);
+    nex_ioctl(nexio, 500, buf2, 34, true);
+    printf("nex_ioctl(nexio, 500, buf2, 34, true)\n");
+    return 0;
 
     if (set_monitor) {
         buf = set_monitor_value;
