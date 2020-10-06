@@ -36,7 +36,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <argp-extern.h>
+#include <argp.h>
 #include <string.h>
 #include <byteswap.h>
 
@@ -345,10 +345,20 @@ main(int argc, char **argv)
         nexio = nex_init_udp(use_udp_tunneling, txip);
     else
 #ifdef USE_NETLINK
+        printf("nex_init_netlink()\n");
         nexio = nex_init_netlink();
 #else
+        printf("nex_init_ioctl()\n");
         nexio = nex_init_ioctl(ifname);
 #endif
+
+    // SKAUFMANN
+
+    printf("skaufmann\n");
+
+    nex_ioctl(nexio, 800, &buf, 4, true);
+
+    // END SKAUFMANN
 
     if (set_monitor) {
         buf = set_monitor_value;

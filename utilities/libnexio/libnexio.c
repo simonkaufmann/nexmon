@@ -116,6 +116,7 @@ __nex_driver_io(struct ifreq *ifr, struct nex_ioctl *ioc)
     ifr->ifr_data = (void *) ioc;
 
     /* open socket to kernel */
+    printf("socket!\n");
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
         printf("error: socket\n");
 
