@@ -64,6 +64,11 @@
 #include <typedefs.h>
 #include <bcmwifi_channels.h>
 #include <b64.h>
+#include <stdint.h>
+
+#define NEX_SKAUFMANN_ECW 550
+
+#define BUFFER_SIZE 34
 
 struct nexio {
     struct ifreq *ifr;
@@ -79,16 +84,20 @@ extern struct nexio *nex_init_netlink(void);
 
 char *ifname = "eth6";
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     struct nexio *nexio;
     
     nexio = nex_init_ioctl(ifname);
 
-    void *buf2 = malloc(34);
-    memset(buf2, 0, 34);
-    nex_ioctl(nexio, 550, buf2, 34, true);
+    uint8_t *buffer = malloc(BUFFER_SIZE);
+    memset(buffer, 0, BUFFER_SIZE);
+
+    buffer[0] = 0x00;
+    buffer[1] = 0x01;
+    buffer[2] = 0xab;
+    
+    nex_ioctl(nexio, NEX_SKAUFMANN_ECW, buffer, BUFFER_SIZE, true);
    
     return 0;
 }
