@@ -1,0 +1,10 @@
+.UUID
+*.bin
+*.o
+*BUILD_NUMBER
+*ucode_compressed.c
+*templateram.c
+utilities/libnexio/libnexio.a
+utilities/nexutil/nexutil
+utilities/nexutil/types.h
+patches/bcm4366c0/10_10_122_20/nexmon_csi
