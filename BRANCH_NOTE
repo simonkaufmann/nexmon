@@ -1,3 +1,48 @@
 Branch userspace_timer contains a userspace program (on the basis of the
 nexutil compilation process) to run a x millisecond timer to call
 an ioctl on the Wifi chip to initiate the PID controller process.
+
+For compilation - add -lrt -pthread to the gcc
+
+To compile:
+=====
+
+#!/bin/bash
+
+# Build the nexutil code
+
+# Refer to: https://github.com/seemoo-lab/nexmon_csi#getting-started
+# Section for bcm4366c0
+
+# Home directory
+HOME_DIR=/home/simon
+
+# Directories for the code and router
+NEXMON_DIR="${HOME_DIR}/sharing_is_caring/code/nexmon_code"
+ROUTER_ADDRESS="10.0.0.1"
+ROUTER_BINARY_ADDRESS="/jffs/ecw"
+
+# Variables for cross compiling tools
+export AMCC="${HOME_DIR}/sharing_is_caring/tools/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/bin/aarch64-buildroot-linux-gnu-"
+export LD_LIBRARY_PATH="${HOME_DIR}/sharing_is_caring/tools/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/lib"
+
+# Instructions from Get Started
+
+# Initial setup
+cd ${NEXMON_DIR}
+source setup_env.sh
+make
+
+# Compile the tool
+cd utilities/libnexio
+${AMCC}gcc -c libnexio.c -o libnexio.o -DBUILD_ON_RPI
+${AMCC}ar rcs libnexio.a libnexio.o
+cd ../nexutil
+echo "typedef uint32_t uint;" > types.h
+sed -i 's/argp-extern/argp/' nexutil.c
+${AMCC}gcc -static -o nexutil nexutil.c bcmwifi_channels.c b64-encode.c b64-decode.c -DBUILD_ON_RPI -DVERSION=0 -I. -I../libnexio -I../../patches/include -L../libnexio/ -lnexio -lrt -pthread
+
+# Copy to router
+scp nexutil admin@${ROUTER_ADDRESS}:${ROUTER_BINARY_ADDRESS}
+ssh admin@${ROUTER_ADDRESS} "/bin/chmod +x ${ROUTER_BINARY_ADDRESS}"
+
