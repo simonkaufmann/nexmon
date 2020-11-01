@@ -150,13 +150,13 @@ void start_timer(void)
 {
     struct itimerspec value;
 
-    value.it_value.tv_sec = 1;
-    value.it_value.tv_nsec = 0;
+    value.it_value.tv_sec = 0;
+    value.it_value.tv_nsec = 500000000L;
 
-    value.it_interval.tv_sec = 1;
-    value.it_interval.tv_nsec = 0;
+    value.it_interval.tv_sec = 0;
+    value.it_interval.tv_nsec = 500000000L;
 
-    timer_create (CLOCK_REALTIME, NULL, &gTimerid);
+    timer_create(CLOCK_REALTIME, NULL, &gTimerid);
 
     timer_settime (gTimerid, 0, &value, NULL);
 }
@@ -176,13 +176,18 @@ void stop_timer(void)
 
 void timer_callback(int sig) {
     printf(" Catched timer signal: %d ... !!\n", sig);
+    start_timer();
+        (void) signal(SIGALRM, timer_callback);
 }
 
 int main(int argc, char **argv)
 {
-    (void) signal(SIGALRM, timer_callback);
-    start_timer();
-    while(1);
+    while (1) {
+        clock_t start_time = clock();
+        while (clock() < start_time + 500 * 1000);
+        
+        printf("500ms\n");
+    }
 
 
 
