@@ -66,11 +66,10 @@
 #include <b64.h>
 #include <stdint.h>
 
-#include <stdio.h>
 #include <time.h>
-#include <signal.h>
 
 #define NEX_SKAUFMANN_ECW 550
+#define NEX_SKAUFMANN_PID 551
 
 #define BUFFER_SIZE 34
 
@@ -182,30 +181,35 @@ void timer_callback(int sig) {
 
 int main(int argc, char **argv)
 {
-    while (1) {
-        clock_t start_time = clock();
-        while (clock() < start_time + 500 * 1000);
-        
-        printf("500ms\n");
-    }
-
-
-
-
-    argp_parse(&argp, argc, argv, 0, 0, 0);
 
     struct nexio *nexio;
     
     nexio = nex_init_ioctl(ifname);
 
+    printf("Connect to interface '%s'\n", ifname);
+
     uint8_t *buffer = malloc(BUFFER_SIZE);
     memset(buffer, 0, BUFFER_SIZE);
 
-    buffer[0] = ecw;
+    while (1) {
+        clock_t start_time = clock();
+        while (clock() < start_time + 500 * 1000);
     
-    nex_ioctl(nexio, NEX_SKAUFMANN_ECW, buffer, BUFFER_SIZE, true);
+        printf("Send ioctl to %s\n", ifname);
+        nex_ioctl(nexio, NEX_SKAUFMANN_PID, buffer, BUFFER_SIZE, true);
+    }
 
-    printf("Set interface '%s' to ECW 0x%x\n", ifname, ecw);
+    // argp_parse(&argp, argc, argv, 0, 0, 0);
+
+
+    // uint8_t *buffer = malloc(BUFFER_SIZE);
+    // memset(buffer, 0, BUFFER_SIZE);
+
+    // buffer[0] = ecw;
+    
+    // nex_ioctl(nexio, NEX_SKAUFMANN_ECW, buffer, BUFFER_SIZE, true);
+
+    // printf("Set interface '%s' to ECW 0x%x\n", ifname, ecw);
    
     return 0;
 }
