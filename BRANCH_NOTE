@@ -1,0 +1,3 @@
+Branch userspace_timer contains a userspace program (on the basis of the
+nexutil compilation process) to run a x millisecond timer to call
+an ioctl on the Wifi chip to initiate the PID controller process.
