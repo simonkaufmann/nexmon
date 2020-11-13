@@ -101,6 +101,7 @@ extern struct nexio *nex_init_netlink(void);
 int set_ecw = FALSE;
 char *ifname = "wl1.1";
 uint8_t ecw = 0xaa;
+uint16_t txop = 0x00;
 
 int set_kp = FALSE;
 int32_t kp = 0;
@@ -121,7 +122,8 @@ static char doc[] = "ecw -- program to set contention window on Broadcom chips."
 
 struct argp_option options[] ={
     {"interface", 'i', "<string>", 0, "Interface to set ECW for"},
-    {"ecw", 'c', "0x[0-9a-fA-F][0-9a-fA-F]", 0, "ECW value to set interface to"},
+    {"ecw", 'c', "0x[0-9a-fA-F][0-9a-fA-F]", 0, "8-bit ECW value to set interface to"},
+    {"txop", 't', "0xaaaa", 0, "16-bit TXOP value to set interface to"},
     {"ki", 'k', "<integer>", 0, "I-part of the PI controller"},
     {"ki_denominator", 'K', "<integer>", 0, "Denominator of I-part of PI controller"},
     {"kp", 'p', "<integer>", 0, "P-part of the PI controller"},
@@ -173,6 +175,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             }
             ecw = (parse_digit(arg[2]) << 4) | parse_digit(arg[3]);
             break;
+        case 't':
+            set_ecw = TRUE;
+                        if (arg[0] != '0' || arg[1] != 'x' || !is_hex_digit(arg[2]) || !is_hex_digit(arg[3]) || !is_hex_digit(arg[4]) || !is_hex_digit(arg[5])) {
+                printf("ERR: -t or --txop argument needs to start with 0x followed by four hex digits [0-9a-fA-F]\n");
+                return;
+            }
+            txop = (parse_digit(arg[2]) << 12) | (parse_digit(arg[3]) << 8) | (parse_digit(arg[4]) << 4) | parse_digit(arg[5]);
         case 'k':
             ki = atoi(arg);
             set_ki = TRUE;
@@ -254,10 +263,12 @@ void set_ecw_parameter(struct nexio *nexio) {
         uint8_t buffer[BUFFER_SIZE];
         memset(buffer, 0, BUFFER_SIZE);
         buffer[0] = ecw;
+        buffer[1] = txop & 0xff;
+        buffer[2] = (txop >> 8) & 0xff;
         
         nex_ioctl(nexio, NEX_SKAUFMANN_ECW, buffer, BUFFER_SIZE, true);
 
-        printf("Set interface '%s' to ECW 0x%x\n", ifname, ecw);
+        printf("Set interface '%s' to ECW 0x%x and TXOP to 0x%x\n", ifname, ecw, txop);
     }
 }
 
