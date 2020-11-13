@@ -177,11 +177,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         case 't':
             set_ecw = TRUE;
-                        if (arg[0] != '0' || arg[1] != 'x' || !is_hex_digit(arg[2]) || !is_hex_digit(arg[3]) || !is_hex_digit(arg[4]) || !is_hex_digit(arg[5])) {
+            if (arg[0] != '0' || arg[1] != 'x' || !is_hex_digit(arg[2]) || !is_hex_digit(arg[3]) || !is_hex_digit(arg[4]) || !is_hex_digit(arg[5])) {
                 printf("ERR: -t or --txop argument needs to start with 0x followed by four hex digits [0-9a-fA-F]\n");
                 return;
             }
             txop = (parse_digit(arg[2]) << 12) | (parse_digit(arg[3]) << 8) | (parse_digit(arg[4]) << 4) | parse_digit(arg[5]);
+            break;
         case 'k':
             ki = atoi(arg);
             set_ki = TRUE;
