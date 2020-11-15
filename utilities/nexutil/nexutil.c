@@ -86,7 +86,7 @@ extern struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip
 extern struct nexio *nex_init_netlink(void);
 
 char *ifname = "eth6";
-uint8_t time_period = 500; /* in milliseconds */
+int time_period = 500; /* in milliseconds */
 
 static char doc[] = "timer -- program to trigger ioctl for control loop in Wifi driver";
 
