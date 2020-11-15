@@ -86,54 +86,19 @@ extern struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip
 extern struct nexio *nex_init_netlink(void);
 
 char *ifname = "eth6";
-uint8_t ecw = 0x00;
+uint8_t time_period = 500; /* in milliseconds */
 
-static char doc[] = "ecw -- program to set contention window on Broadcom chips.";
+static char doc[] = "timer -- program to trigger ioctl for control loop in Wifi driver";
 
 struct argp_option options[] ={
-    {"interface", 'i', "<string>", 0, "Interface to set ECW for"},
-    {"ecw", 'c', "0x[0-9a-fA-F][0-9a-fA-F]", 0, "ECW value to set interface to"},
+    {"time", 't', "<integer>", 0, "Time in ms for one iteration of ioctl send to driver."
     {0}
 };
 
-static int is_hex_digit(char digit) {
-    if ((digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f') || (digit >= 'A' && digit <= 'F')) {
-        return 1;
-    }
-    return 0;
-}
-
-static int parse_digit(char digit) {
-    if (!is_hex_digit(digit)) {
-        return -1;
-    }
-
-    if (digit >= '0' && digit <= '9')   {
-        return digit - '0';
-    }
-
-    if (digit >= 'a' && digit <= 'f')   {
-        return digit - 'a' + 10;
-    }
-
-    if (digit >= 'A' && digit <= 'F')   {
-        return digit - 'A' + 10;
-    }
-
-    return -1;
-}
-
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
-        case 'i':
-            ifname = arg;
-            break;
-        case 'c':
-            if (arg[0] != '0' || arg[1] != 'x' || !is_hex_digit(arg[2]) || !is_hex_digit(arg[3])) {
-                printf("ERR: -c or --ecw argument needs to start with 0x followed by two hex digits [0-9a-fA-F]\n");
-                return;
-            }
-            ecw = (parse_digit(arg[2]) << 4) | parse_digit(arg[3]);
+        case 't':
+            time_period = atoi(arg);
             break;
         default:
             return ARGP_ERR_UNKNOWN;
@@ -143,73 +108,29 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 
 static struct argp argp = {options, parse_opt, 0, doc};
 
-timer_t gTimerid;
-
-void start_timer(void)
-{
-    struct itimerspec value;
-
-    value.it_value.tv_sec = 0;
-    value.it_value.tv_nsec = 500000000L;
-
-    value.it_interval.tv_sec = 0;
-    value.it_interval.tv_nsec = 500000000L;
-
-    timer_create(CLOCK_REALTIME, NULL, &gTimerid);
-
-    timer_settime (gTimerid, 0, &value, NULL);
-}
-
-void stop_timer(void)
-{
-    struct itimerspec value;
-
-    value.it_value.tv_sec = 0;
-    value.it_value.tv_nsec = 0;
-
-    value.it_interval.tv_sec = 0;
-    value.it_interval.tv_nsec = 0;
-
-    timer_settime (gTimerid, 0, &value, NULL);
-}
-
-void timer_callback(int sig) {
-    printf(" Catched timer signal: %d ... !!\n", sig);
-    start_timer();
-        (void) signal(SIGALRM, timer_callback);
-}
-
 int main(int argc, char **argv)
 {
+    if (sizeof(int) != sizeof(int32_t)) {
+        printf("Warning, atoi might not return int32_t\n, sizeof(int): %d, sizeof(int32_t): %d\n", sizeof(int), sizeof(int32_t));
+    }
+
+    argp_parse(&argp, argc, argv, 0, 0, 0);
 
     struct nexio *nexio;
-    
     nexio = nex_init_ioctl(ifname);
 
-    printf("Connect to interface '%s'\n", ifname);
+    printf("Connect to interface '%s' and send ioctl every %dms\n", ifname, time_period);
 
     uint8_t *buffer = malloc(BUFFER_SIZE);
     memset(buffer, 0, BUFFER_SIZE);
 
     while (1) {
         clock_t start_time = clock();
-        while (clock() < start_time + 500 * 1000);
+        while (clock() < start_time + time_period * 1000);
     
         printf("Send ioctl to %s\n", ifname);
         nex_ioctl(nexio, NEX_SKAUFMANN_PID, buffer, BUFFER_SIZE, true);
     }
 
-    // argp_parse(&argp, argc, argv, 0, 0, 0);
-
-
-    // uint8_t *buffer = malloc(BUFFER_SIZE);
-    // memset(buffer, 0, BUFFER_SIZE);
-
-    // buffer[0] = ecw;
-    
-    // nex_ioctl(nexio, NEX_SKAUFMANN_ECW, buffer, BUFFER_SIZE, true);
-
-    // printf("Set interface '%s' to ECW 0x%x\n", ifname, ecw);
-   
     return 0;
 }
