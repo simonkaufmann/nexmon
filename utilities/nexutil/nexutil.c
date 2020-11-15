@@ -91,7 +91,7 @@ uint8_t time_period = 500; /* in milliseconds */
 static char doc[] = "timer -- program to trigger ioctl for control loop in Wifi driver";
 
 struct argp_option options[] ={
-    {"time", 't', "<integer>", 0, "Time in ms for one iteration of ioctl send to driver."
+    {"time", 't', "<integer>", 0, "Time in ms for one iteration of ioctl send to driver."},
     {0}
 };
 
