@@ -122,14 +122,15 @@ int main(int argc, char **argv)
     printf("Connect to interface '%s' and send ioctl every %dms\n", ifname, time_period);
 
     uint8_t *buffer = malloc(BUFFER_SIZE);
-    memset(buffer, 0, BUFFER_SIZE);
 
     while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
         clock_t start_time = clock();
         while (clock() < start_time + time_period * 1000);
     
         printf("Send ioctl to %s\n", ifname);
         nex_ioctl(nexio, NEX_SKAUFMANN_PID, buffer, BUFFER_SIZE, true);
+        printf("buffer[2] returned: 0x%x, buffer[3]: 0x%x, buffer[4]: 0x%x\n", buffer[2], buffer[3], buffer[4]);
     }
 
     return 0;
