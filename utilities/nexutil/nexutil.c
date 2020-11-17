@@ -109,6 +109,40 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 
 static struct argp argp = {options, parse_opt, 0, doc};
 
+struct pid_read {
+    uint32_t empty_slots;
+    uint32_t frame_sharing1;
+    uint32_t frame_sharing2;
+};
+typedef struct pid_read pid_read_t;
+
+uint32_t get_uint32_t(uint8_t *ptr) {
+    uint32_t value = (ptr[3] << 24) | (ptr[2] << 16) | (ptr[1] << 8) | ptr[0];
+    return value;
+}
+
+/* read measured values from driver */
+void read_values(struct nexio *nexio, pid_read_t *pid_read) {
+    uint8_t buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+    nex_ioctl(nexio, NEX_SKAUFMANN_READ_PID, buffer, BUFFER_SIZE, true);
+
+    pid_read->empty_slots = get_uint32_t(buffer);
+    pid_read->frame_sharing1 = get_uint32_t(buffer+4);
+    pid_read->frame_sharing2 = get_uint32_t(buffer+8);
+    printf("empty_slots: %d, frame_sharing1: %d, frame_sharing2: %d\n", pid_read->empty_slots, pid_read->frame_sharing1, pid_read->frame_sharing2);
+}
+
+/* calculate new ecw based on measured values read from driver */
+void pid_loop(pid_read_t *pid_read) {
+
+}
+
+/* set ecw based on calculated new parameters */
+void set_ecw(pid_read_t *pid_read) {
+
+}
+
 int main(int argc, char **argv)
 {
     if (sizeof(int) != sizeof(int32_t)) {
@@ -120,18 +154,19 @@ int main(int argc, char **argv)
     struct nexio *nexio;
     nexio = nex_init_ioctl(ifname);
 
+    pid_read_t pid_read;
+
     printf("Connect to interface '%s' and send ioctl every %dms\n", ifname, time_period);
 
-    uint8_t *buffer = malloc(BUFFER_SIZE);
-
     while (1) {
-        memset(buffer, 0, BUFFER_SIZE);
         clock_t start_time = clock();
         while (clock() < start_time + time_period * 1000);
     
         printf("Send ioctl to %s\n", ifname);
-        nex_ioctl(nexio, NEX_SKAUFMANN_PID, buffer, BUFFER_SIZE, true);
-        printf("buffer[2] returned: 0x%x, buffer[3]: 0x%x, buffer[4]: 0x%x\n", buffer[2], buffer[3], buffer[4]);
+
+        read_values(nexio, &pid_read);
+        pid_loop(&pid_read);
+        set_ecw(&pid_read);
     }
 
     return 0;
