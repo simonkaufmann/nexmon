@@ -123,7 +123,9 @@ __nex_driver_io(struct ifreq *ifr, struct nex_ioctl *ioc)
     if (ret < 0 && errno != EAGAIN)
         printf("%s: error ret=%d errno=%d\n", __FUNCTION__, ret, errno);
 
-    //printf("ioctl: %d\n", ioc->cmd);
+    char *c = ifr->ifr_data;
+    printf("returns at ioctl: 0x%x: %d\n", c[2]);
+
 
     /* cleanup */
     close(s);
