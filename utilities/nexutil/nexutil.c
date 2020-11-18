@@ -74,9 +74,15 @@
 
 #define BUFFER_SIZE 34
 
+// Parameters for To = 222us:
 #define P_E_STAR (0.92)
-#define K_I (0.4035)
-#define K_P (0.2373)
+//#define K_P (0.01758)
+//#define K_I (0.01034)
+
+// Parameters for To = (222us + 16us + 16us) * 8:
+//#define P_E_STAR (0.9912)
+#define K_P (0.4035)
+#define K_I (0.2373)
 
 struct nexio {
     struct ifreq *ifr;
@@ -165,8 +171,8 @@ void pid_loop(pid_read_t *pid_read) {
     double e_fair1 = s_1 - s_2;
     double e_fair2 = s_2 - s_1;
 
-    double e_1 = e_opt;// + e_fair1;
-    double e_2 = e_opt;// + e_fair2;
+    double e_1 = e_opt + e_fair1;
+    double e_2 = e_opt + e_fair2;
 
     pid_read->e_integral_1 += e_1;
     pid_read->e_integral_2 += e_2;
@@ -178,10 +184,11 @@ void pid_loop(pid_read_t *pid_read) {
     pid_read->ecw2 = o_2 * devices2;
 
     //printf("devices1: %d, devices2: %d\n", devices1, devices2);
-    printf("ecw1: 0x%x, ", pid_read->ecw1);
-    printf("ecw2: 0x%x, ", pid_read->ecw2);
+    printf("ecw1: %d, ", pid_read->ecw1);
+    printf("ecw2: %d, ", pid_read->ecw2);
     printf("o_1: %f, o_2: %f, ", o_1, o_2);
     printf("e_opt: %f, e_fair1: %f, e_fair2: %f, ", e_opt, e_fair1, e_fair2);
+    printf("e_1: %f, e_2: %f, ", e_1, e_2);
     printf("e_integral_1: %f, e_integral_2: %f\n", pid_read->e_integral_1, pid_read->e_integral_2);
 }
 
