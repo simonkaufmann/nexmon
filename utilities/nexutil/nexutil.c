@@ -74,15 +74,11 @@
 
 #define BUFFER_SIZE 34
 
-// Parameters for To = 222us:
-#define P_E_STAR (0.92)
-//#define K_P (0.01758)
-//#define K_I (0.01034)
+#define BUSY_FRAME_TIME_CONSTANT 245
 
-// Parameters for To = (222us + 16us + 16us) * 8:
-//#define P_E_STAR (0.9912)
-#define K_P (0.4035)
-#define K_I (0.2373)
+#define P_E_STAR (0.91)
+#define K_P (15.23)
+#define K_I (8.96)
 
 struct nexio {
     struct ifreq *ifr;
@@ -136,6 +132,7 @@ struct pid_read {
     uint32_t empty_slots;
     uint32_t frame_sharing1;
     uint32_t frame_sharing2;
+    uint32_t busy;
     double e_integral_1;
     double e_integral_2;
     int ecw1;
@@ -157,12 +154,19 @@ void read_values(struct nexio *nexio, pid_read_t *pid_read) {
     pid_read->empty_slots = get_uint32_t(buffer);
     pid_read->frame_sharing1 = get_uint32_t(buffer+4);
     pid_read->frame_sharing2 = get_uint32_t(buffer+8);
-    printf("empty_slots: %d, frame_sharing1: %d, frame_sharing2: %d\n", pid_read->empty_slots, pid_read->frame_sharing1, pid_read->frame_sharing2);
+    pid_read->busy = get_uint32_t(buffer+12);
+    printf("empty_slots: %d, busy (frames): %d, frame_sharing1: %d, frame_sharing2: %d\n", pid_read->empty_slots, pid_read->busy / BUSY_FRAME_TIME_CONSTANT, pid_read->frame_sharing1, pid_read->frame_sharing2);
 }
 
 /* calculate new ecw based on measured values read from driver */
 void pid_loop(pid_read_t *pid_read) {
-    double total_frames = pid_read->empty_slots + pid_read->frame_sharing1 + pid_read->frame_sharing2;
+    double collisions = pid_read->busy / (double) BUSY_FRAME_TIME_CONSTANT - pid_read->frame_sharing1 - pid_read->frame_sharing2;
+    /* BUSY_FRAME_TIME_CONSTANT was experimentally determined to match up with the frame_sharing1 count */
+    if (collisions < 0) {
+        collisions = 0;
+    }
+
+    double total_frames = pid_read->empty_slots + pid_read->frame_sharing1 + pid_read->frame_sharing2 + collisions;
     double p_e = pid_read->empty_slots / total_frames;
     double s_1 = pid_read->frame_sharing1 / total_frames;
     double s_2 = pid_read->frame_sharing2 / total_frames;
@@ -189,7 +193,8 @@ void pid_loop(pid_read_t *pid_read) {
     printf("o_1: %f, o_2: %f, ", o_1, o_2);
     printf("e_opt: %f, e_fair1: %f, e_fair2: %f, ", e_opt, e_fair1, e_fair2);
     printf("e_1: %f, e_2: %f, ", e_1, e_2);
-    printf("e_integral_1: %f, e_integral_2: %f\n", pid_read->e_integral_1, pid_read->e_integral_2);
+    printf("e_integral_1: %f, e_integral_2: %f, ", pid_read->e_integral_1, pid_read->e_integral_2);
+    printf("collisions: %f\n", collisions);
 }
 
 /* set ecw based on calculated new parameters */
@@ -250,8 +255,6 @@ int main(int argc, char **argv)
     while (1) {
         while (clock() < start_time + time_period * 1000);
         start_time = clock();
-    
-        printf("Send ioctl to %s\n", ifname);
 
         read_values(nexio, &pid_read);
         pid_loop(&pid_read);
