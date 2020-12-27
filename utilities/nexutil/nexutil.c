@@ -68,15 +68,23 @@
 
 #include <time.h>
 
+#include <math.h>
+
 #define NEX_SKAUFMANN_ECW 550
 #define NEX_SKAUFMANN_PID 551
 #define NEX_SKAUFMANN_READ_PID 554
 
 #define BUFFER_SIZE 34
 
-#define BUSY_FRAME_TIME_CONSTANT 245
+#define BUSY_FRAME_TIME_CONSTANT 248 // in milliseconds for a frame on the air
 
-#define P_E_STAR (0.91)
+// Frame burst
+// #define P_E_STAR (0.916)
+// #define K_P (115.57)
+// #define K_I (67.98)
+
+// Single frame 248us
+#define P_E_STAR (0.77)
 #define K_P (15.23)
 #define K_I (8.96)
 
@@ -184,12 +192,17 @@ void pid_loop(pid_read_t *pid_read) {
     double o_1 = K_P * e_1 + K_I * pid_read->e_integral_1;
     double o_2 = K_P * e_2 + K_I * pid_read->e_integral_2;
 
-    pid_read->ecw1 = o_1 * devices1;
-    pid_read->ecw2 = o_2 * devices2;
+    double cw1 = o_1 * devices1;
+    double cw2 = o_2 * devices2;
+
+    pid_read->ecw1 = log2(cw1 + 1);
+    pid_read->ecw2 = log2(cw2 + 1);
 
     //printf("devices1: %d, devices2: %d\n", devices1, devices2);
     printf("ecw1: %d, ", pid_read->ecw1);
     printf("ecw2: %d, ", pid_read->ecw2);
+    printf("cw1: %f, ", cw1);
+    printf("cw2: %f, ", cw2);
     printf("o_1: %f, o_2: %f, ", o_1, o_2);
     printf("e_opt: %f, e_fair1: %f, e_fair2: %f, ", e_opt, e_fair1, e_fair2);
     printf("e_1: %f, e_2: %f, ", e_1, e_2);

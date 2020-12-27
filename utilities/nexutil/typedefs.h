@@ -249,11 +249,11 @@ typedef double		float64;
 
 #ifndef TYPEDEF_FLOAT_T
 
-#if defined(FLOAT32)
-typedef float32 float_t;
-#else /* default to double precision floating point */
-typedef float64 float_t;
-#endif
+// #if defined(FLOAT32)
+// typedef float32 float_t;
+// #else /* default to double precision floating point */
+// typedef float64 float_t;
+// #endif
 
 #endif /* TYPEDEF_FLOAT_T */
 
